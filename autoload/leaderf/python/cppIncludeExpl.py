@@ -46,6 +46,7 @@ class CppIncludeExplManager(Manager):
             return
 
         lfCmd("call setline(line('.'), '#include \"%s\"')" % line)
+        lfCmd("call cursor(line('.'), col('$'))")
 
     def _cmdExtension(self, cmd):
         return True
