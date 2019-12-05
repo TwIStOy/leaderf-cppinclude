@@ -14,7 +14,7 @@ class CppIncludeExplorer(Explorer):
         pass
 
     def getContent(self, *args, **kwargs):
-        return lfEval("split(system('fd -LI -e h'), '\n')")
+        return lfEval("split(system('fd -LI -e h -e hpp -e hh'), '\n')")
 
     def getStlCategory(self):
         return "CppInclude"
