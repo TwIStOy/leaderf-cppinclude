@@ -4,9 +4,26 @@
 import vim
 import os
 import os.path
+import subprocess
 from leaderf.utils import *
 from leaderf.explorer import *
 from leaderf.manager import *
+
+include_hints = '.include_hints'
+
+def check_path(p):
+    if os.path.exists(os.path.join(p, include_hints)):
+        return True
+    return False
+
+def find_project_root(pwd):
+    current = pwd
+    while os.path.split(current)[1]:
+        if check_path(current):
+            return current
+        current = os.path.split(current)[0]
+
+    return pwd
 
 
 class CppIncludeExplorer(Explorer):
@@ -14,7 +31,23 @@ class CppIncludeExplorer(Explorer):
         pass
 
     def getContent(self, *args, **kwargs):
-        return lfEval("split(system('fd -LI -e h -e hpp -e hh'), '\n')")
+        project_root = find_project_root(lfEval('expand("%:p:h")'))
+        working_direcotries = []
+        if check_path(project_root):
+            with open(os.path.join(project_root, include_hints), 'r') as fp:
+                hint = fp.readlines()
+                for directory in hint:
+                    working_direcotries.append(os.path.join(project_root, directory.strip()))
+        else:
+            working_direcotries.append(project_root)
+        res = []
+        for directory in working_direcotries:
+            result = subprocess.run(
+                ['fd', '-LI', '-e', 'h', '-e', 'hpp', '-e', 'hh',
+                 '--base-directory', directory],
+                stdout=subprocess.PIPE, encoding='utf-8')
+            res.extend([x.strip() for x in result.stdout.split('\n') if x.strip()])
+        return list(set(res))
 
     def getStlCategory(self):
         return "CppInclude"
